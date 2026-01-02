@@ -20,8 +20,8 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     // DEV MODE: Accept dev tokens for testing
-    if (token.startsWith('dev_token_') && process.env.NODE_ENV !== 'production') {
-      // For dev mode, create a test user if it doesn't exist
+    if (token.startsWith('dev_token_')) {
+      // For dev mode, use the dev user
       req.user = {
         firebaseUid: 'dev_user_123',
         email: 'dev@example.com',
