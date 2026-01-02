@@ -191,7 +191,7 @@ export class Post {
         (c.user_a_id = $1 AND c.user_b_id = p.owner_user_id) OR
         (c.user_b_id = $1 AND c.user_a_id = p.owner_user_id)
       )
-      LEFT JOIN post_seen ps ON (ps.post_id = p.id AND ps.user_id = $1)
+      LEFT JOIN post_seen ps ON (ps.post_id = p.id AND ps.viewer_user_id = $1)
       WHERE c.state = 'active'
         AND c.ended_at IS NULL
         AND p.deleted_at IS NULL
@@ -254,9 +254,9 @@ export class Post {
     try {
       for (const postId of postIds) {
         await client.query(
-          `INSERT INTO post_seen (post_id, user_id, seen_at)
+          `INSERT INTO post_seen (post_id, viewer_user_id, seen_at)
            VALUES ($1, $2, NOW())
-           ON CONFLICT (post_id, user_id) DO UPDATE
+           ON CONFLICT (post_id, viewer_user_id) DO UPDATE
              SET seen_at = NOW()`,
           [postId, userId]
         );
