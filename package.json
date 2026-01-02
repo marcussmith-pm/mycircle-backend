@@ -1,0 +1,32 @@
+{
+  "name": "mycircle-backend",
+  "version": "1.0.0",
+  "description": "My Circle - Private social media backend API",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:migrate": "node src/database/migrate.js",
+    "db:seed": "node src/database/seed.js",
+    "test": "echo \"Tests not yet implemented\""
+  },
+  "keywords": ["social", "api", "privacy"],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "firebase-admin": "^12.0.0",
+    "dotenv": "^16.3.1",
+    "bcrypt": "^5.1.1",
+    "express-rate-limit": "^7.1.5",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "node-watch": "^0.7.4"
+  }
+}
