@@ -259,10 +259,92 @@ export const listPending = async (req, res, next) => {
   }
 };
 
+/**
+ * Reconfirm a temporary connection
+ * POST /v1/connections/:id/reconfirm
+ */
+export const reconfirmConnection = async (req, res, next) => {
+  try {
+    const { firebaseUid } = req.user;
+    const { id } = req.params;
+
+    // Get user
+    const user = await User.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      return res.status(404).json({ error: 'Not Found', message: 'User not found' });
+    }
+
+    // Get connection
+    const connection = await Connection.findById(id);
+    if (!connection) {
+      return res.status(404).json({ error: 'Not Found', message: 'Connection not found' });
+    }
+
+    // Verify user is part of connection
+    if (connection.user_a_id !== user.id && connection.user_b_id !== user.id) {
+      return res.status(403).json({ error: 'Forbidden', message: 'You are not part of this connection' });
+    }
+
+    // Verify connection is temporary
+    if (connection.type !== 'temporary') {
+      return res.status(400).json({ error: 'Bad Request', message: 'Only temporary connections can be reconfirmed' });
+    }
+
+    // Determine which user is reconfirming
+    const isUserA = connection.user_a_id === user.id;
+    const reconfirmField = isUserA ? 'reconfirm_a_at' : 'reconfirm_b_at';
+    const otherUserField = isUserA ? 'reconfirm_b_at' : 'reconfirm_a_at';
+
+    // Check if already reconfirmed
+    if (connection[reconfirmField]) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'You have already reconfirmed this connection'
+      });
+    }
+
+    // Update reconfirmation timestamp
+    const updated = await Connection.reconfirm(id, user.id);
+
+    if (!updated) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Failed to reconfirm connection' });
+    }
+
+    // Check if both users have reconfirmed
+    const bothReconfirmed = updated.reconfirm_a_at && updated.reconfirm_b_at;
+
+    if (bothReconfirmed) {
+      // Both reconfirmed - extend expiry by 12 months
+      const renewed = await Connection.renewExpiry(id);
+
+      return res.status(200).json({
+        id: renewed.id,
+        message: 'Connection renewed for 12 months',
+        expires_at: renewed.expires_at,
+        state: renewed.state
+      });
+    } else {
+      // Only one reconfirmed - get other user info
+      const otherUserId = isUserA ? connection.user_b_id : connection.user_a_id;
+      const otherUser = await User.findById(otherUserId);
+
+      return res.status(200).json({
+        id: updated.id,
+        message: `Waiting for ${otherUser.real_name} to reconfirm`,
+        waiting_for_other: true,
+        other_user_name: otherUser.real_name
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   sendRequest,
   acceptRequest,
   removeConnection,
   listConnections,
-  listPending
+  listPending,
+  reconfirmConnection
 };

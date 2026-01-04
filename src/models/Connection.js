@@ -193,6 +193,47 @@ export class Connection {
 
     return result.rows[0] || null;
   }
+
+  /**
+   * Reconfirm a temporary connection
+   */
+  static async reconfirm(connectionId, userId) {
+    // Determine if user is A or B
+    const connection = await this.findById(connectionId);
+    if (!connection) return null;
+
+    const isUserA = connection.user_a_id === userId;
+    const field = isUserA ? 'reconfirm_a_at' : 'reconfirm_b_at';
+
+    const result = await query(
+      `UPDATE connections
+       SET ${field} = NOW(),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [connectionId]
+    );
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Renew expiry for a reconfirmed connection (extend by 12 months)
+   */
+  static async renewExpiry(connectionId) {
+    const result = await query(
+      `UPDATE connections
+       SET expires_at = NOW() + INTERVAL '12 months',
+           reconfirm_a_at = NULL,
+           reconfirm_b_at = NULL,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [connectionId]
+    );
+
+    return result.rows[0] || null;
+  }
 }
 
 export default Connection;

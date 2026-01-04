@@ -169,10 +169,10 @@ export class Post {
   }
 
   /**
-   * Get feed for user (posts from circle connections)
+   * Get feed for user (posts from circle connections + own posts)
    */
   static async getFeed(userId, newerThan = null, limit = 20) {
-    // Query for posts from mutual connections
+    // Query for posts from connections AND own posts
     let queryText = `
       SELECT DISTINCT
         p.id,
@@ -187,14 +187,23 @@ export class Post {
         COALESCE(ps.seen_at IS NOT NULL, false) as seen
       FROM posts p
       JOIN users u ON p.owner_user_id = u.id
-      JOIN connections c ON (
-        (c.user_a_id = $1 AND c.user_b_id = p.owner_user_id) OR
-        (c.user_b_id = $1 AND c.user_a_id = p.owner_user_id)
-      )
       LEFT JOIN post_seen ps ON (ps.post_id = p.id AND ps.viewer_user_id = $1)
-      WHERE c.state = 'active'
-        AND c.ended_at IS NULL
-        AND p.deleted_at IS NULL
+      WHERE p.deleted_at IS NULL
+        AND (
+          -- Your own posts
+          p.owner_user_id = $1
+          OR
+          -- Posts from connections
+          EXISTS (
+            SELECT 1 FROM connections c
+            WHERE c.state = 'active'
+              AND c.ended_at IS NULL
+              AND (
+                (c.user_a_id = $1 AND c.user_b_id = p.owner_user_id) OR
+                (c.user_b_id = $1 AND c.user_a_id = p.owner_user_id)
+              )
+          )
+        )
     `;
 
     const queryParams = [userId];

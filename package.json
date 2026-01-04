@@ -9,24 +9,31 @@
     "dev": "node --watch src/index.js",
     "db:migrate": "node src/database/migrate.js",
     "db:seed": "node src/database/seed.js",
-    "test": "echo \"Tests not yet implemented\""
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "keywords": ["social", "api", "privacy"],
+  "keywords": [
+    "social",
+    "api",
+    "privacy"
+  ],
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "express": "^4.18.2",
-    "pg": "^8.11.3",
-    "firebase-admin": "^12.0.0",
-    "dotenv": "^16.3.1",
     "bcrypt": "^5.1.1",
-    "express-rate-limit": "^7.1.5",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
     "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^12.0.0",
+    "helmet": "^7.1.0",
+    "pg": "^8.11.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "node-watch": "^0.7.4"
+    "node-watch": "^0.7.4",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.16"
   }
 }

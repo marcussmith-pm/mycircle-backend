@@ -24,6 +24,12 @@ router.post('/:id/accept', authenticate, connectionController.acceptRequest);
 router.post('/:id/remove', authenticate, connectionController.removeConnection);
 
 /**
+ * POST /v1/connections/:id/reconfirm
+ * Reconfirm a temporary connection
+ */
+router.post('/:id/reconfirm', authenticate, connectionController.reconfirmConnection);
+
+/**
  * GET /v1/connections
  * List user's active connections
  */
