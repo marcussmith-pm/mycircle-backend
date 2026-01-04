@@ -60,15 +60,29 @@ export const createPost = async (req, res, next) => {
     const { firebaseUid } = req.user;
     const { caption, content_type, comments_enabled, media, client_id } = req.body;
 
+    console.log('📥 Received post creation request:', {
+      firebaseUid,
+      body: req.body,
+      hasCaption: !!caption,
+      captionLength: caption?.length,
+      contentType: content_type,
+      mediaCount: Array.isArray(media) ? media.length : 'not an array',
+      firstMediaItem: Array.isArray(media) && media.length > 0 ? media[0] : 'none'
+    });
+
     // Validate user
     const user = await User.findByFirebaseUid(firebaseUid);
     if (!user) {
+      console.log('❌ User not found for firebaseUid:', firebaseUid);
       return res.status(404).json({ error: 'Not Found', message: 'User not found' });
     }
+
+    console.log('✅ User found:', user.id);
 
     // Validate content type
     const validTypes = ['post', 'reel'];
     if (!content_type || !validTypes.includes(content_type)) {
+      console.log('❌ Invalid content_type:', content_type);
       return res.status(400).json({
         error: 'Bad Request',
         message: 'content_type must be "post" or "reel"'
@@ -77,6 +91,7 @@ export const createPost = async (req, res, next) => {
 
     // Validate media
     if (!Array.isArray(media) || media.length === 0) {
+      console.log('❌ Invalid media:', { isArray: Array.isArray(media), length: media?.length });
       return res.status(400).json({
         error: 'Bad Request',
         message: 'At least one media item required'
@@ -85,6 +100,7 @@ export const createPost = async (req, res, next) => {
 
     const maxMedia = content_type === 'post' ? 10 : 1;
     if (media.length > maxMedia) {
+      console.log('❌ Too many media items:', media.length);
       return res.status(400).json({
         error: 'Bad Request',
         message: `Maximum ${maxMedia} media item(s) allowed`
@@ -93,6 +109,7 @@ export const createPost = async (req, res, next) => {
 
     // Validate caption length
     if (caption && caption.length > 2200) {
+      console.log('❌ Caption too long:', caption.length);
       return res.status(400).json({
         error: 'Bad Request',
         message: 'Caption must be 2200 characters or less'
@@ -110,6 +127,8 @@ export const createPost = async (req, res, next) => {
       }
     }
 
+    console.log('✅ All validation passed, creating post...');
+
     // Create post
     const post = await Post.create(
       user.id,
@@ -119,6 +138,8 @@ export const createPost = async (req, res, next) => {
       media,
       client_id
     );
+
+    console.log('✅ Post created successfully:', post.id);
 
     res.status(201).json({
       id: post.id,
@@ -130,6 +151,7 @@ export const createPost = async (req, res, next) => {
       created_at: post.created_at
     });
   } catch (error) {
+    console.error('❌ Error creating post:', error);
     next(error);
   }
 };
