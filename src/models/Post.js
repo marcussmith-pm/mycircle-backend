@@ -279,6 +279,9 @@ export class Post {
 export class MediaUpload {
   /**
    * Generate signed upload URLs
+   *
+   * TEMPORARY: Returns placeholder URLs for testing
+   * TODO: Implement real S3/GCS signed URLs for production
    */
   static async generateUploadUrls(files) {
     const uploadItems = [];
@@ -296,12 +299,13 @@ export class MediaUpload {
       const storageKey = uuidv4();
       const extension = this.getExtension(file.contentType);
 
-      // For now, return a placeholder URL
-      // In production, this would generate actual S3/GCS signed URLs
+      // For testing: return placeholder URLs
+      // In production: generate actual S3/GCS signed URLs
       uploadItems.push({
         uploadToken,
         uploadUrl: `https://storage.example.com/upload/${storageKey}`, // Placeholder
         storageKey: `${storageKey}${extension}`,
+        cdnUrl: `https://via.placeholder.com/400x300?text=Image`, // Placeholder
         contentType: file.contentType
       });
     }
