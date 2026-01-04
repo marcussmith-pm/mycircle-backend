@@ -1,4 +1,4 @@
-import { query } from '../config/database.js';
+import { query, getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 
@@ -7,7 +7,7 @@ export class Post {
    * Create a new post
    */
   static async create(ownerId, caption, contentType, commentsEnabled, mediaItems, clientId = null) {
-    const client = await query();
+    const client = await getClient();
 
     try {
       await client.query('BEGIN');
@@ -259,7 +259,7 @@ export class Post {
   static async markAsSeen(userId, postIds) {
     if (postIds.length === 0) return;
 
-    const client = await query();
+    const client = await getClient();
     try {
       for (const postId of postIds) {
         await client.query(
