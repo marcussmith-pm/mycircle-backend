@@ -20,10 +20,15 @@ const isFirebaseConfigured = firebaseConfig.projectId &&
 // Initialize Firebase Admin only if configured
 if (!admin.apps.length && isFirebaseConfigured) {
   try {
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET ||
+      `gs://${firebaseConfig.projectId}.appspot.com`;
+
     admin.initializeApp({
-      credential: admin.credential.cert(firebaseConfig)
+      credential: admin.credential.cert(firebaseConfig),
+      storageBucket: storageBucket
     });
     console.log('Firebase Admin initialized successfully');
+    console.log(`Storage bucket: ${storageBucket}`);
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
