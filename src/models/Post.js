@@ -1,6 +1,7 @@
 import { query, getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
+import { getBucket, getPublicUrl, isConfigured } from '../config/storage.js';
 
 export class Post {
   /**
@@ -278,13 +279,14 @@ export class Post {
 
 export class MediaUpload {
   /**
-   * Generate signed upload URLs
-   *
-   * TEMPORARY: Returns placeholder URLs for testing
-   * TODO: Implement real S3/GCS signed URLs for production
+   * Generate signed upload URLs for Google Cloud Storage
    */
   static async generateUploadUrls(files) {
     const uploadItems = [];
+
+    // Check if GCS is configured
+    const gcsConfigured = isConfigured();
+    const bucket = gcsConfigured ? getBucket() : null;
 
     for (const file of files) {
       const uploadToken = jwt.sign(
@@ -298,16 +300,41 @@ export class MediaUpload {
 
       const storageKey = uuidv4();
       const extension = this.getExtension(file.contentType);
+      const fullStorageKey = `${storageKey}${extension}`;
 
-      // For testing: return placeholder URLs
-      // In production: generate actual S3/GCS signed URLs
-      uploadItems.push({
-        uploadToken,
-        uploadUrl: `https://storage.example.com/upload/${storageKey}`, // Placeholder
-        storageKey: `${storageKey}${extension}`,
-        cdnUrl: `https://via.placeholder.com/400x300?text=Image`, // Placeholder
-        contentType: file.contentType
-      });
+      if (bucket) {
+        // Generate real GCS signed upload URL
+        const file = bucket.file(fullStorageKey);
+
+        // Create a signed URL for uploading (valid for 15 minutes)
+        const [signedUrl] = await file.getSignedUrl({
+          version: 'v4',
+          action: 'write',
+          expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+          contentType: file.contentType,
+        });
+
+        // The public URL that will be accessible after upload
+        const publicUrl = getPublicUrl(fullStorageKey);
+
+        uploadItems.push({
+          uploadToken,
+          uploadUrl: signedUrl,
+          storageKey: fullStorageKey,
+          cdnUrl: publicUrl,
+          contentType: file.contentType
+        });
+      } else {
+        // Fallback to placeholder URLs if GCS not configured
+        console.warn('⚠️ GCS not configured, using placeholder URLs');
+        uploadItems.push({
+          uploadToken,
+          uploadUrl: `https://storage.example.com/upload/${storageKey}`,
+          storageKey: fullStorageKey,
+          cdnUrl: `https://via.placeholder.com/400x300?text=Image`,
+          contentType: file.contentType
+        });
+      }
     }
 
     return uploadItems;
