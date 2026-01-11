@@ -1,7 +1,7 @@
 import { query, getClient } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { getBucket, getPublicUrl, isConfigured } from '../config/storage.js';
+import { getBucket, getPublicUrl, getSignedUrl, isConfigured } from '../config/storage.js';
 
 export class Post {
   /**
@@ -279,14 +279,14 @@ export class Post {
 
 export class MediaUpload {
   /**
-   * Generate signed upload URLs for Google Cloud Storage
+   * Generate signed upload URLs for Firebase Storage
    */
   static async generateUploadUrls(files) {
     const uploadItems = [];
 
-    // Check if GCS is configured
-    const gcsConfigured = isConfigured();
-    const bucket = gcsConfigured ? getBucket() : null;
+    // Check if Firebase Storage is configured
+    const storageConfigured = isConfigured();
+    const bucket = storageConfigured ? getBucket() : null;
 
     for (const file of files) {
       const uploadToken = jwt.sign(
@@ -298,13 +298,11 @@ export class MediaUpload {
         process.env.JWT_SECRET || 'mycircle-secret'
       );
 
-      const storageKey = uuidv4();
-      const extension = this.getExtension(file.contentType);
-      const fullStorageKey = `${storageKey}${extension}`;
+      const storageKey = `posts/${uuidv4()}${this.getExtension(file.contentType)}`;
 
       if (bucket) {
-        // Generate real GCS signed upload URL
-        const file = bucket.file(fullStorageKey);
+        // Generate real Firebase Storage signed upload URL
+        const file = bucket.file(storageKey);
 
         // Create a signed URL for uploading (valid for 15 minutes)
         const [signedUrl] = await file.getSignedUrl({
@@ -314,23 +312,24 @@ export class MediaUpload {
           contentType: file.contentType,
         });
 
-        // The public URL that will be accessible after upload
-        const publicUrl = getPublicUrl(fullStorageKey);
+        // The public URL format for Firebase Storage
+        // Note: Access is controlled by security rules, not by URL obscurity
+        const publicUrl = getPublicUrl(storageKey);
 
         uploadItems.push({
           uploadToken,
           uploadUrl: signedUrl,
-          storageKey: fullStorageKey,
+          storageKey: storageKey,
           cdnUrl: publicUrl,
           contentType: file.contentType
         });
       } else {
-        // Fallback to placeholder URLs if GCS not configured
-        console.warn('⚠️ GCS not configured, using placeholder URLs');
+        // Fallback to placeholder URLs if not configured
+        console.warn('⚠️ Firebase Storage not configured, using placeholder URLs');
         uploadItems.push({
           uploadToken,
           uploadUrl: `https://storage.example.com/upload/${storageKey}`,
-          storageKey: fullStorageKey,
+          storageKey: storageKey,
           cdnUrl: `https://via.placeholder.com/400x300?text=Image`,
           contentType: file.contentType
         });

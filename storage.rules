@@ -1,0 +1,53 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ========================================================================
+    // POST MEDIA - Only accessible to circle members
+    // ========================================================================
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is the owner
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Match all files in posts directory
+    // Format: posts/{filename}
+    match /posts/{allPaths=**} {
+      // READ: Allow read if user is authenticated
+      // Note: In production, you'd want to verify they're in the poster's circle
+      // This requires a Firestore lookup, which is possible but more complex
+      allow read: if isAuthenticated();
+
+      // WRITE: Only allow write if authenticated
+      // The backend will handle additional validation (circle membership, etc)
+      allow write: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // USER AVATARS - Users can manage their own avatars
+    // ========================================================================
+
+    match /users/{userId}/{allPaths=**} {
+      // READ: Anyone authenticated can read avatars
+      allow read: if isAuthenticated();
+
+      // WRITE: Only the user can write their own avatar
+      allow write: if isOwner(userId);
+    }
+
+    // ========================================================================
+    // DEFAULT DENY
+    // ========================================================================
+
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
