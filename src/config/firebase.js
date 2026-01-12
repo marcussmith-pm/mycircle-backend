@@ -15,12 +15,15 @@ const parsePrivateKey = (key) => {
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
     parsedKey = trimmed.slice(1, -1);
+    console.log('Removed surrounding quotes');
   }
 
   // Railway-specific fix: If there's a trailing quote but no leading quote, remove it
   trimmed = parsedKey.trim();
   if (!trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    console.log('Found trailing quote without leading quote - removing');
     parsedKey = trimmed.slice(0, -1);
+    console.log('After removing trailing quote, ends with:', parsedKey.slice(-30));
   }
 
   // Check if key has literal \n (from .env file) vs actual newlines (from Railway UI)
