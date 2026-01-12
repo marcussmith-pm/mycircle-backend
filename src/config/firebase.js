@@ -16,10 +16,13 @@ const parsePrivateKey = (key) => {
     parsedKey = parsedKey.slice(1, -1);
   }
 
-  // Replace literal \n with actual newlines (handle escaped backslashes)
-  parsedKey = parsedKey.replace(/\\n/g, '\n');
+  // Check if key has literal \n (from .env file) vs actual newlines (from Railway UI)
+  // If it contains literal "\n" characters, convert them to actual newlines
+  if (parsedKey.includes('\\n')) {
+    parsedKey = parsedKey.replace(/\\n/g, '\n');
+  }
 
-  // Remove any remaining escape sequences
+  // Remove any remaining escape sequences for quotes
   parsedKey = parsedKey.replace(/\\"/g, '"');
 
   return parsedKey;
