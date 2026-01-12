@@ -7,13 +7,14 @@ dotenv.config();
 const parsePrivateKey = (key) => {
   if (!key) return null;
 
-  // Remove surrounding quotes if present
-  let parsedKey = key.trim();
+  let parsedKey = key;
 
-  // Handle both single and double quotes
-  if ((parsedKey.startsWith('"') && parsedKey.endsWith('"')) ||
-      (parsedKey.startsWith("'") && parsedKey.endsWith("'"))) {
-    parsedKey = parsedKey.slice(1, -1);
+  // Remove surrounding quotes if present (handle multi-line strings)
+  // Check if the ENTIRE key is wrapped in quotes (not just internal quotes)
+  const trimmed = parsedKey.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    parsedKey = trimmed.slice(1, -1);
   }
 
   // Check if key has literal \n (from .env file) vs actual newlines (from Railway UI)
@@ -24,6 +25,9 @@ const parsePrivateKey = (key) => {
 
   // Remove any remaining escape sequences for quotes
   parsedKey = parsedKey.replace(/\\"/g, '"');
+
+  // Trim any remaining whitespace
+  parsedKey = parsedKey.trim();
 
   return parsedKey;
 };
