@@ -4,11 +4,40 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Parse Firebase credentials from environment variables
+const parsePrivateKey = (key) => {
+  if (!key) return null;
+
+  // Remove surrounding quotes if present
+  let parsedKey = key.trim();
+
+  // Handle both single and double quotes
+  if ((parsedKey.startsWith('"') && parsedKey.endsWith('"')) ||
+      (parsedKey.startsWith("'") && parsedKey.endsWith("'"))) {
+    parsedKey = parsedKey.slice(1, -1);
+  }
+
+  // Replace literal \n with actual newlines (handle escaped backslashes)
+  parsedKey = parsedKey.replace(/\\n/g, '\n');
+
+  // Remove any remaining escape sequences
+  parsedKey = parsedKey.replace(/\\"/g, '"');
+
+  return parsedKey;
+};
+
 const firebaseConfig = {
   projectId: process.env.FIREBASE_PROJECT_ID,
   clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  privateKey: parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY)
 };
+
+// Debug: Log private key format (without exposing the actual key)
+if (firebaseConfig.privateKey) {
+  console.log('Firebase private key loaded:',
+    'Length:', firebaseConfig.privateKey.length,
+    'Starts with:', firebaseConfig.privateKey.substring(0, 30),
+    'Ends with:', firebaseConfig.privateKey.substring(firebaseConfig.privateKey.length - 30));
+}
 
 // Check if Firebase is configured
 const isFirebaseConfigured = firebaseConfig.projectId &&
