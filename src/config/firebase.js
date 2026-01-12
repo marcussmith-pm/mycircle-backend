@@ -9,33 +9,29 @@ const parsePrivateKey = (key) => {
 
   let parsedKey = key;
 
-  // Remove surrounding quotes if present (handle multi-line strings)
-  // Check if the ENTIRE key is wrapped in quotes (not just internal quotes)
+  // CRITICAL: Convert literal \n to actual newlines FIRST (before any quote handling)
+  // Railway stores keys with literal "\n" instead of actual newlines
+  if (parsedKey.includes('\\n')) {
+    parsedKey = parsedKey.replace(/\\n/g, '\n');
+  }
+
+  // THEN: Remove surrounding quotes if present
   let trimmed = parsedKey.trim();
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
     parsedKey = trimmed.slice(1, -1);
-    console.log('Removed surrounding quotes');
   }
 
-  // Railway-specific fix: If there's a trailing quote but no leading quote, remove it
+  // Railway-specific: If there's still a trailing quote (but no leading quote), remove it
   trimmed = parsedKey.trim();
   if (!trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    console.log('Found trailing quote without leading quote - removing');
     parsedKey = trimmed.slice(0, -1);
-    console.log('After removing trailing quote, ends with:', parsedKey.slice(-30));
-  }
-
-  // Check if key has literal \n (from .env file) vs actual newlines (from Railway UI)
-  // If it contains literal "\n" characters, convert them to actual newlines
-  if (parsedKey.includes('\\n')) {
-    parsedKey = parsedKey.replace(/\\n/g, '\n');
   }
 
   // Remove any remaining escape sequences for quotes
   parsedKey = parsedKey.replace(/\\"/g, '"');
 
-  // Trim any remaining whitespace
+  // Final trim
   parsedKey = parsedKey.trim();
 
   return parsedKey;
