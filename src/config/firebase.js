@@ -7,32 +7,38 @@ dotenv.config();
 const parsePrivateKey = (key) => {
   if (!key) return null;
 
-  let parsedKey = key;
+  // Check if key is base64 encoded (doesn't contain BEGIN markers)
+  // This handles Railway environment variable with base64-encoded private key
+  if (!key.includes('-----BEGIN PRIVATE KEY-----')) {
+    try {
+      const decoded = Buffer.from(key, 'base64').toString('utf-8');
+      console.log('Decoded base64-encoded private key');
+      return decoded;
+    } catch (e) {
+      console.error('Failed to decode base64 key:', e.message);
+      return null;
+    }
+  }
 
-  // CRITICAL: Convert literal \n to actual newlines FIRST (before any quote handling)
-  // Railway stores keys with literal "\n" instead of actual newlines
+  // Legacy parsing for .env files with literal \n
+  let parsedKey = key;
   if (parsedKey.includes('\\n')) {
     parsedKey = parsedKey.replace(/\\n/g, '\n');
   }
 
-  // THEN: Remove surrounding quotes if present
+  // Remove surrounding quotes
   let trimmed = parsedKey.trim();
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
     parsedKey = trimmed.slice(1, -1);
   }
 
-  // Railway-specific: If there's still a trailing quote (but no leading quote), remove it
   trimmed = parsedKey.trim();
   if (!trimmed.startsWith('"') && trimmed.endsWith('"')) {
     parsedKey = trimmed.slice(0, -1);
   }
 
-  // Remove any remaining escape sequences for quotes
-  parsedKey = parsedKey.replace(/\\"/g, '"');
-
-  // Final trim
-  parsedKey = parsedKey.trim();
+  parsedKey = parsedKey.replace(/\\"/g, '"').trim();
 
   return parsedKey;
 };
