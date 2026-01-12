@@ -40,10 +40,15 @@ const firebaseConfig = {
 
 // Debug: Log private key format (without exposing the actual key)
 if (firebaseConfig.privateKey) {
+  const endsWithQuote = firebaseConfig.privateKey.endsWith('"');
+  const startsWithQuote = firebaseConfig.privateKey.startsWith('"');
+
   console.log('Firebase private key loaded:',
     'Length:', firebaseConfig.privateKey.length,
     'Starts with:', firebaseConfig.privateKey.substring(0, 30),
-    'Ends with:', firebaseConfig.privateKey.substring(firebaseConfig.privateKey.length - 30));
+    'Ends with:', firebaseConfig.privateKey.substring(firebaseConfig.privateKey.length - 30),
+    'Has trailing quote:', endsWithQuote,
+    'Has leading quote:', startsWithQuote);
 }
 
 // Check if Firebase is configured
