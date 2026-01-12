@@ -11,10 +11,16 @@ const parsePrivateKey = (key) => {
 
   // Remove surrounding quotes if present (handle multi-line strings)
   // Check if the ENTIRE key is wrapped in quotes (not just internal quotes)
-  const trimmed = parsedKey.trim();
+  let trimmed = parsedKey.trim();
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
     parsedKey = trimmed.slice(1, -1);
+  }
+
+  // Railway-specific fix: If there's a trailing quote but no leading quote, remove it
+  trimmed = parsedKey.trim();
+  if (!trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    parsedKey = trimmed.slice(0, -1);
   }
 
   // Check if key has literal \n (from .env file) vs actual newlines (from Railway UI)
