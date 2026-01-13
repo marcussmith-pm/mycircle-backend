@@ -236,6 +236,25 @@ export class Post {
         [post.id]
       );
 
+      // Replace cdn_url with signed URLs for authenticated access
+      const mediaWithSignedUrls = await Promise.all(
+        mediaResult.rows.map(async (media) => {
+          if (media.storage_key && isConfigured()) {
+            try {
+              const signedUrl = await getSignedUrl(media.storage_key, 3600); // 1 hour expiry
+              return {
+                ...media,
+                cdn_url: signedUrl
+              };
+            } catch (e) {
+              console.error('Failed to generate signed URL for media:', media.storage_key, e.message);
+              return media;
+            }
+          }
+          return media;
+        })
+      );
+
       posts.push({
         id: post.id,
         owner_user_id: post.owner_user_id,
@@ -247,7 +266,7 @@ export class Post {
         owner_name: post.owner_name,
         owner_avatar: post.owner_avatar,
         seen: post.seen,
-        media: mediaResult.rows
+        media: mediaWithSignedUrls
       });
     }
 
